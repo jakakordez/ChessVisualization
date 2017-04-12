@@ -16,7 +16,7 @@ typedef struct _mesh{
 	int mode;
 	int size;
 } mesh;
-mesh *board;
+mesh *board, *horse;
 
 void drawMesh(mesh *m){
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -69,6 +69,37 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawMesh(board);
 	glutSwapBuffers();
+}
+
+mesh * loadOBJ(char *filename){
+	FILE *fp = fopen(filename, "r");
+	if(fp == NULL) printf("Can't read");
+	printf("Reading: %s\n", filename);
+	float vector[3];
+	int ind[9];
+	char type;
+	while(!feof(fp)){
+		switch(fgetc(fp)){
+			case 'f':
+				fscanf(fp, "%d/%d/%d %d/%d/%d %d/%d/%d\n", ind, ind+1, ind+2, ind+3, ind+4, ind+5, ind+6, ind+7, ind+8);
+				printf("Face: %d %d %d\n", *ind, ind[3], ind[6]);
+			break;
+			case 'v':
+
+				type = fgetc(fp);
+				if(type == ' ' || type == 'n'){
+					fscanf(fp, "%f %f %f\n", vector, vector+1, vector+2);
+					printf("%c: %f %f %f\n", type, *vector, vector[1], vector[2]);
+				}
+			break;
+		}
+
+	}
+	fclose(fp);
+
+	mesh *result = (mesh *)malloc(sizeof(mesh));
+
+	return result;
 }
 
 void init(void)
@@ -147,6 +178,7 @@ void init(void)
 
 //	addElementBuffer(&BlackElementBuffer, black_elements, h*w*2);
 	addElementBuffer(&ElementBuffer, white_elements, h*w*2);*/
+	horse = loadOBJ("/home/jaka/Desktop/opengl/horse.obj");
 }
 
 int main(int argc, char **argv)
@@ -157,6 +189,6 @@ int main(int argc, char **argv)
   glutDisplayFunc(display);
   init();
   printf("Started\n");
-  glutMainLoop();
+  //glutMainLoop();
   return 0;
 }
