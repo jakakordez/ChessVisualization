@@ -18,6 +18,8 @@ vector position[2];
 vector *moves;
 float offset;
 int current_figure;
+int Width = 800;
+int Height = 600;
 
 typedef struct _mesh{
 	float *vertices, *normals;
@@ -149,19 +151,19 @@ mesh * openMesh(char *path){
 
 
 void update(int value){
-	offset += 0.01;
+	offset += 0.05;
 	if(offset >= 1 && moves->next != NULL){
 		offset = 0;
 		current_figure = (current_figure+1)%2;
 		moves = moves->next;
 	}
-	if(moves->next->next != NULL){
+	if(moves->next != NULL && moves->next->next != NULL){
 		float off = 0.5-cos(10*offset/M_PI)/2;
 		float dx = ((moves->next->next->x)-(moves->x))*off;
 		float dy = ((moves->next->next->y)-(moves->y))*off;
-		position[current_figure].x = dx+0.5+(moves->x);
+		position[current_figure].x = dx-0.5+(moves->x);
 		position[current_figure].y = sin(offset/(0.1*M_PI));
-		position[current_figure].z = dy+0.5+(moves->y);
+		position[current_figure].z = dy-0.5+(moves->y);
 	}
 
 	glutTimerFunc(30, update, 0);
@@ -178,12 +180,12 @@ void init(void)
 
 	moves = (vector *)malloc(sizeof(vector));
 	vector *move = moves;
-	do{
+	while(!feof(stdin)){
 		move->next = (vector *)malloc(sizeof(vector));
 		move = move->next;
+		move->next = NULL;
 		scanf("%f %f", &(move->x), &(move->y));
 	}
-	while(!feof(stdin));
 
 	/* Enable a single OpenGL light. */
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
@@ -196,13 +198,14 @@ void init(void)
 	//glEnable(GL_CULL_FACE);
 
 	/* Setup the view of the cube. */
+	glViewport(0, 0, Width, Height);
 	glMatrixMode(GL_PROJECTION);
 	gluPerspective( /* field of view in degree */ 70.0,
-		/* aspect ratio */ 1.0,
+		/* aspect ratio */ (float)Width/(float)Height,
 		/* Z near */ 0.1, /* Z far */ 100.0);
 	glMatrixMode(GL_MODELVIEW);
-	gluLookAt(-2.5, 2, -2.5,  /* eye is at (0,0,5) */
-		2.0, 0.0, 2.0,      /* center is at (0,0,0) */
+	gluLookAt(-1., 3, -1.,  /* eye */
+		2.0, 0.0, 2.0,      /* center*/
 		0.0, 1.0, 0.);      /* up is in positive Y direction */
 
 	/* Adjust cube position to be asthetic angle. */
@@ -245,10 +248,6 @@ void init(void)
 			}
 		}
 	}
-	for(i = 0; i < h*w*2; i++){
-		//printf("%d %d\n", black_elements[i], white_elements[i]);
-	}
-	printf("\n");
 	board = addMesh(board_vertices, board_normals, 3*(h+1)*(w+1), white_elements, h*w*2, GL_QUADS);
 	
 	knight = openMesh("./Knight");
@@ -257,10 +256,11 @@ void init(void)
 int main(int argc, char **argv)
 {
   glutInit(&argc, argv);
+  glutInitWindowSize(Width, Height);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutCreateWindow("Chess");
   glutDisplayFunc(display);
-  glutTimerFunc(100, update, 0);
+  glutTimerFunc(30, update, 0);
   init();
   printf("Started\n");
   glutMainLoop();
