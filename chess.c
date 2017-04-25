@@ -20,6 +20,7 @@ float offset;
 int current_figure;
 int Width = 800;
 int Height = 600;
+int boardSize = 8;
 
 typedef struct _mesh{
 	float *vertices, *normals;
@@ -87,6 +88,14 @@ void drawKnight(int index){
 
 void display(void)
 {
+	float avgX = (position[0].x+position[1].x)/2;
+	float avgY = (position[0].z+position[1].z)/2;
+
+	glLoadIdentity();
+	gluLookAt(-1., boardSize/2, -1.,  /* eye */
+		boardSize/4, 0.0, boardSize/4,      /* center*/
+		0.0, 1.0, 0.);      /* up is in positive Y direction */
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	drawMesh(board);
@@ -151,7 +160,7 @@ mesh * openMesh(char *path){
 
 
 void update(int value){
-	offset += 0.05;
+	offset += 0.06;
 	if(offset >= 1 && moves->next != NULL){
 		offset = 0;
 		current_figure = (current_figure+1)%2;
@@ -173,8 +182,8 @@ void update(int value){
 void init(void)
 {
 	int i, j, index;
-	h = 8;
-	w = 8;	
+	h = boardSize;
+	w = boardSize;	
 	current_figure = 0;
 	offset = 0.0;
 
@@ -184,7 +193,7 @@ void init(void)
 		move->next = (vector *)malloc(sizeof(vector));
 		move = move->next;
 		move->next = NULL;
-		scanf("%f %f", &(move->x), &(move->y));
+		scanf("%f %f\n", &(move->x), &(move->y));
 	}
 
 	/* Enable a single OpenGL light. */
@@ -202,9 +211,9 @@ void init(void)
 	glMatrixMode(GL_PROJECTION);
 	gluPerspective( /* field of view in degree */ 70.0,
 		/* aspect ratio */ (float)Width/(float)Height,
-		/* Z near */ 0.1, /* Z far */ 100.0);
+		/* Z near */ 0.1, /* Z far */ 1000.0);
 	glMatrixMode(GL_MODELVIEW);
-	gluLookAt(-1., 3, -1.,  /* eye */
+	gluLookAt(-1., boardSize/2, -1.,  /* eye */
 		2.0, 0.0, 2.0,      /* center*/
 		0.0, 1.0, 0.);      /* up is in positive Y direction */
 
@@ -255,6 +264,9 @@ void init(void)
 
 int main(int argc, char **argv)
 {
+  if(argc > 1){
+    boardSize = atoi(argv[1]);
+  }
   glutInit(&argc, argv);
   glutInitWindowSize(Width, Height);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
