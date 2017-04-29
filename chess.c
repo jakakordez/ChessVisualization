@@ -8,7 +8,9 @@ typedef struct _vector{
 	struct _vector *next;
 } vector;
 
-GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};  /* Diffuse light. */
+GLfloat light_white[] = {1.0, 1.0, 1.0, 1.0};  /* Diffuse light. */
+GLfloat light_black[] = {0.2, 0.2, 0.2, 1.0};  /* Diffuse light. */
+GLfloat light_gray[] = {0.3, 0.3, 0.3, 1.0};  /* Diffuse light. */
 GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};  /* Light location. */
 
 int h, w;
@@ -28,10 +30,13 @@ typedef struct _mesh{
 	GLuint vertexBuffer, normalBuffer, elementBuffer;
 	int mode;
 	int size;
+	GLfloat *color;
 } mesh;
-mesh *board, *knight;
+mesh *board_white, *board_black, *knight;
 
 void drawMesh(mesh *m){
+	if(m->color != NULL) glLightfv(GL_LIGHT0, GL_DIFFUSE, m->color);
+
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glVertexPointer(3, GL_FLOAT, 0, m->vertices);
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -59,7 +64,7 @@ void addArrayBuffer(GLuint *destination, float *data, int elements){
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-mesh * addMesh(float *vertices, float *normals, int vertexCount, GLuint *elements, int size, int mode){
+mesh * addMesh(float *vertices, float *normals, int vertexCount, GLuint *elements, int size, int mode, GLfloat *color){
 	mesh *newMesh = (mesh *)malloc(sizeof(mesh));
 	newMesh->normals = normals;
 	newMesh->size = size;
@@ -74,6 +79,7 @@ mesh * addMesh(float *vertices, float *normals, int vertexCount, GLuint *element
 	newMesh->vertexBuffer = buffer;
 	addElementBuffer(&buffer, elements, size);
 	newMesh->elementBuffer = buffer;
+	newMesh->color = color;
 	return newMesh;
 }
 
@@ -98,11 +104,13 @@ void display(void)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	drawMesh(board);
-	
+	drawMesh(board_black);
+	drawMesh(board_white);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_white);
 	drawKnight(0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_black);
 	drawKnight(1);
-
+	
 	glutSwapBuffers();
 }
 
@@ -155,7 +163,8 @@ mesh * openMesh(char *path){
 	}
 	fclose(fp);
 	printf("Loaded: %d vertices, %d elements\n", countVertices, countElements);
-	return addMesh(vertices, normals, countVertices*3, elements, countElements, GL_TRIANGLES);
+
+	return addMesh(vertices, normals, countVertices*3, elements, countElements, GL_TRIANGLES, NULL);
 }
 
 
@@ -197,7 +206,7 @@ void init(void)
 	}
 
 	/* Enable a single OpenGL light. */
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_white);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHTING);
@@ -205,6 +214,8 @@ void init(void)
 	/* Use depth buffering for hidden surface elimination. */
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
+
+	glClearColor(85/255.0, 169/255.0, 255/255.0, 1.0);
 
 	/* Setup the view of the cube. */
 	glViewport(0, 0, Width, Height);
@@ -257,7 +268,8 @@ void init(void)
 			}
 		}
 	}
-	board = addMesh(board_vertices, board_normals, 3*(h+1)*(w+1), white_elements, h*w*2, GL_QUADS);
+	board_white = addMesh(board_vertices, board_normals, 3*(h+1)*(w+1), white_elements, h*w*2, GL_QUADS, light_white);
+	board_black = addMesh(board_vertices, board_normals, 3*(h+1)*(w+1), black_elements, h*w*2, GL_QUADS, light_gray);
 	
 	knight = openMesh("./Knight");
 }
